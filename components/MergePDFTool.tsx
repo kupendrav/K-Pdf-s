@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, FileText, ArrowUp, ArrowDown, Download, Loader2, Files } from 'lucide-react';
+import { X, Upload, FileText, ArrowUp, ArrowDown, Download, Loader2, Files, AlertCircle } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
 import download from 'downloadjs';
 
@@ -11,6 +11,7 @@ const MergePDFTool: React.FC<MergePDFToolProps> = ({ onClose }) => {
   const [files, setFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -23,20 +24,44 @@ const MergePDFTool: React.FC<MergePDFToolProps> = ({ onClose }) => {
     setIsDragging(false);
   };
 
+  const validateAndAddFiles = (newFiles: File[]) => {
+    const validFiles: File[] = [];
+    let invalidCount = 0;
+
+    newFiles.forEach(file => {
+        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+             if (!files.some(f => f.name === file.name && f.size === file.size)) {
+                 validFiles.push(file);
+            }
+        } else {
+            invalidCount++;
+        }
+    });
+
+    if (invalidCount > 0) {
+        setError(`${invalidCount} file(s) were skipped. Only PDF files are allowed.`);
+    } else {
+        setError(null);
+    }
+    
+    if (validFiles.length > 0) {
+        setFiles(prev => [...prev, ...validFiles]);
+    }
+  };
+
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.files) {
-      const newFiles = Array.from(e.dataTransfer.files).filter((f: File) => f.type === 'application/pdf');
-      setFiles(prev => [...prev, ...newFiles]);
+      validateAndAddFiles(Array.from(e.dataTransfer.files));
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      const newFiles = Array.from(e.target.files).filter((f: File) => f.type === 'application/pdf');
-      setFiles(prev => [...prev, ...newFiles]);
+       validateAndAddFiles(Array.from(e.target.files));
     }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const removeFile = (index: number) => {
@@ -55,11 +80,12 @@ const MergePDFTool: React.FC<MergePDFToolProps> = ({ onClose }) => {
 
   const mergePDFs = async () => {
     if (files.length < 2) {
-      alert("Please select at least 2 PDF files to merge.");
+      setError("Please select at least 2 PDF files to merge.");
       return;
     }
 
     setProcessing(true);
+    setError(null);
     try {
       const mergedPdf = await PDFDocument.create();
 
@@ -74,7 +100,7 @@ const MergePDFTool: React.FC<MergePDFToolProps> = ({ onClose }) => {
       download(pdfBytes, "k-pdfs-merged.pdf", "application/pdf");
     } catch (error) {
       console.error("Error merging PDFs:", error);
-      alert("An error occurred while merging your PDF files.");
+      setError("An error occurred while merging your PDF files. Some files might be corrupted.");
     } finally {
       setProcessing(false);
     }
@@ -103,6 +129,21 @@ const MergePDFTool: React.FC<MergePDFToolProps> = ({ onClose }) => {
             </button>
           </div>
 
+          {/* Error Banner */}
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 m-6 mb-0 rounded-r-md flex justify-between items-start">
+                <div className="flex">
+                    <AlertCircle className="h-5 w-5 text-red-500 mr-3 mt-0.5" />
+                    <div>
+                        <p className="text-sm text-red-700">{error}</p>
+                    </div>
+                </div>
+                <button onClick={() => setError(null)} className="text-red-400 hover:text-red-500">
+                    <X className="h-5 w-5" />
+                </button>
+            </div>
+          )}
+
           {/* Content */}
           <div className="flex-1 overflow-hidden flex flex-col md:flex-row bg-gray-50">
             
@@ -110,18 +151,24 @@ const MergePDFTool: React.FC<MergePDFToolProps> = ({ onClose }) => {
             <div className="flex-1 p-6 overflow-y-auto">
               {files.length === 0 ? (
                 <div 
-                  className={`h-full border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-colors ${isDragging ? 'border-red-500 bg-red-50' : 'border-gray-300 hover:border-red-400 hover:bg-white'}`}
+                  className={`h-full border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all duration-200 
+                    ${isDragging 
+                        ? 'border-red-500 bg-red-50 scale-[0.99]' 
+                        : 'border-gray-300 hover:border-red-400 hover:bg-white bg-gray-50/50'
+                    }`}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                 >
-                  <div className="p-8 text-center">
-                    <Upload className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-xl font-medium text-gray-900 mb-2">Drop PDF files here</h3>
+                  <div className="p-8 text-center pointer-events-none">
+                    <div className={`mx-auto mb-4 w-20 h-20 rounded-full flex items-center justify-center transition-colors ${isDragging ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-400'}`}>
+                         <Upload className="w-10 h-10" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">Drag & drop PDFs here</h3>
                     <p className="text-gray-500 mb-6">or</p>
                     <button 
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-6 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
+                      className="pointer-events-auto px-8 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors shadow-lg shadow-red-200 hover:shadow-red-300 hover:-translate-y-0.5"
                     >
                       Select PDF files
                     </button>
@@ -186,7 +233,7 @@ const MergePDFTool: React.FC<MergePDFToolProps> = ({ onClose }) => {
 
             {/* Right: Actions sidebar */}
             {files.length > 0 && (
-              <div className="w-full md:w-80 bg-white border-l border-gray-200 p-6 flex flex-col flex-shrink-0 z-10">
+              <div className="w-full md:w-80 bg-white border-l border-gray-200 p-6 flex flex-col flex-shrink-0 z-10 shadow-[-4px_0_15px_-3px_rgba(0,0,0,0.05)]">
                 <h4 className="font-bold text-gray-900 mb-4">Summary</h4>
                 <div className="space-y-3 mb-auto">
                     <div className="flex justify-between text-sm">
@@ -204,7 +251,7 @@ const MergePDFTool: React.FC<MergePDFToolProps> = ({ onClose }) => {
                 <button
                   onClick={mergePDFs}
                   disabled={processing || files.length < 2}
-                  className="w-full py-4 bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-bold text-lg shadow-lg shadow-red-100 flex items-center justify-center gap-2 transition-all"
+                  className="w-full py-4 bg-red-600 hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl font-bold text-lg shadow-lg shadow-red-100 flex items-center justify-center gap-2 transition-all active:scale-95"
                 >
                   {processing ? (
                     <>

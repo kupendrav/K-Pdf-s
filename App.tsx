@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Navbar from './components/Navbar';
 import ToolCard from './components/ToolCard';
 import OCRDemo from './components/OCRDemo';
-import MergePDFTool from './components/MergePDFTool';
+import UniversalTool from './components/UniversalTool';
 import LoginModal from './components/LoginModal';
 import { TOOLS } from './constants';
 import { ArrowRight, Star, ShieldCheck, Zap } from 'lucide-react';
@@ -16,13 +16,7 @@ function App() {
   const popularTools = TOOLS.filter(t => ['merge-pdf', 'split-pdf', 'compress-pdf', 'pdf-to-word', 'pdf-to-jpg'].includes(t.id));
 
   const handleToolClick = (id: string) => {
-    // Check for implemented tools
-    if (['ocr-pdf', 'scan-pdf', 'edit-pdf', 'merge-pdf'].includes(id)) {
-        setActiveToolId(id);
-    } else {
-        // Simple alert for non-implemented tools to manage expectations in this UI demo
-        alert(`Opened tool: ${id}. \n\nFully Implemented Demos:\n- Merge PDF (with drag & drop)\n- OCR PDF (with Gemini AI)`);
-    }
+    setActiveToolId(id);
   };
 
   const closeTool = () => {
@@ -171,10 +165,9 @@ function App() {
       )}
 
       {activeToolId && (
-        <>
-            {activeToolId === 'merge-pdf' && <MergePDFTool onClose={closeTool} />}
-            {['ocr-pdf', 'scan-pdf', 'edit-pdf'].includes(activeToolId) && <OCRDemo onClose={closeTool} />}
-        </>
+        ['ocr-pdf', 'scan-pdf'].includes(activeToolId) 
+            ? <OCRDemo onClose={closeTool} />
+            : <UniversalTool toolId={activeToolId} onClose={closeTool} />
       )}
     </div>
   );
