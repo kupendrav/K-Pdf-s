@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./logo" alt="K-PDF's Logo" width="200" />
+  <img src="logo" alt="K-PDF's Logo" width="200" />
   <h1>K-PDF's</h1>
   <p><strong>Every tool you need to work with PDFs in one place</strong></p>
   
@@ -331,7 +331,7 @@ Contributions are welcome! Here's how you can help:
 
 ## 📄 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License**. See the repository for license details.
 
 ---
 
@@ -356,9 +356,9 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 If you encounter any issues or have questions:
 
-1. Check the [Issues](https://github.com/kupendrav/K-Pdf/issues) page
-2. Create a new issue with detailed information
-3. For general questions, start a [Discussion](https://github.com/kupendrav/K-Pdf/discussions)
+1. Open an issue on the [GitHub repository](https://github.com/kupendrav/K-Pdf)
+2. Provide detailed information about your problem
+3. Include steps to reproduce any bugs
 
 ---
 
